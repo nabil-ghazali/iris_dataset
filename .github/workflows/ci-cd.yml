@@ -1,0 +1,61 @@
+name: CI/CD Pipeline
+
+# Déclenchement automatique
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest  # Machine virtuelle fournie par GitHub
+
+    steps:
+      # 1️⃣ Récupérer le code source
+      - name: Checkout repository
+        uses: actions/checkout@v3 # Récupère ton code depuis GitHub dans le runner (VM).
+
+      # 2️⃣ Installer Python
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.12
+
+      # 3️⃣ Installer les dépendances backend
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # 4️⃣ Lancer les tests
+      - name: Run backend tests
+        run: |
+          cd backend
+          pytest -v
+
+      # 5️⃣ Déployer la documentation
+      - name: Deploy documentation
+        run: |
+          pip install mkdocs mkdocs-material
+          cd docs
+          mkdocs gh-deploy --force
+
+      # 6️⃣ Connexion à DockerHub
+      - name: Login to DockerHub
+        uses: docker/login-action@v2 # Permet au runner GitHub de se connecter à ton DockerHub via les secrets.
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # 7️⃣ Build et push backend Docker
+      - name: Build and push backend Docker image
+        run: |
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/iris-backend:latest ./backend
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/iris-backend:latest
+
+      # 8️⃣ Build et push frontend Docker
+      - name: Build and push frontend Docker image
+        run: |
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/iris-frontend:latest ./frontend
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/iris-frontend:latest
