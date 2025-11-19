@@ -115,4 +115,4 @@ Explication des flux
 
         - Frontend envoie les données vers backend via une requête POST /predict.
 
-        - Backend renvoie la prédiction.
+        - Backend renvoie la prédiction.# Trigger workflow
