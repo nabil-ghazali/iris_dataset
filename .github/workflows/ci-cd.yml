@@ -40,8 +40,9 @@ jobs:
       # 6️⃣ Deploy documentation
       - name: Deploy documentation
         run: |
-          pip install mkdocs mkdocs-material
-          mkdocs gh-deploy --force --config-file docs/mkdocs.yml
+            pip install mkdocs mkdocs-material mkdocstrings[python]
+            mkdocs gh-deploy --force --config-file docs/mkdocs.yml
+
 
       # 7️⃣ Login to DockerHub
       - name: Login to DockerHub
