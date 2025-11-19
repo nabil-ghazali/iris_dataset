@@ -1,0 +1,22 @@
+site_name: Iris Predict - Documentation
+
+theme:
+  name: material
+  language: fr
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: ["../backend"]  # chemin 
+          options:
+            show_root_heading: true
+            show_source: false
+            docstring_style: google
+            merge_init_into_class: true
+
+nav:
+  - Accueil: index.md
+  - API:
+      - Backend: api.md
