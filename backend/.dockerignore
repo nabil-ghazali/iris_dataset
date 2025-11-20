@@ -15,7 +15,7 @@ env/
 
 # MLflow / modèles
 mlruns/
-model/
+
 
 # Logs
 *.log
