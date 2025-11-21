@@ -31,7 +31,8 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           # Installer setuptools compatible pour pkg_resources
-          pip install setuptools==70.0.0
+          #pip install --upgrade setuptools
+
           # SDK Azure ML v1 (pour register_model.py actuel)
           pip install azureml-core
           # Dépendances générales du projet
@@ -72,7 +73,7 @@ jobs:
       - name: Install Azure ML SDK v2
         run: |
           python -m pip install --upgrade pip
-          pip install azure-ai-ml azure-identity
+          pip install "azure-ai-ml>=2.30.0" azure-identity
 
       # 4️⃣ Déployer le modèle sur l'endpoint Azure ML
       - name: Deploy model to Azure ML endpoint
