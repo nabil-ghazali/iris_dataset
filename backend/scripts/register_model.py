@@ -10,13 +10,29 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # ------------------------ Azure ML Configuration ------------------------
-try:
-    subscription_id = os.environ["AZURE_SUBSCRIPTION_ID"]
-    resource_group = os.environ["AZURE_RESOURCE_GROUP"]
-    workspace = os.environ["AZURE_ML_WORKSPACE"]
-except KeyError as e:
-    logger.error(f"Variable d'environnement manquante : {e}")
-    exit(1)
+
+import json
+
+config_path = os.environ.get("AZUREML_CONFIG_DIR")
+
+if config_path:
+    with open(config_path, "r") as f:
+        config = json.load(f)
+    try:
+        subscription_id = config.get("AZURE_SUBSCRIPTION_ID")
+        resource_group = config.get("AZURE_RESOURCE_GROUP")
+        workspace = config.get("AZURE_ML_WORKSPACE")
+    except KeyError as e:
+        logger.error(f"Variable d'environnement manquante : {e}")
+        exit(1)
+
+# try:
+#     subscription_id = os.environ["AZURE_SUBSCRIPTION_ID"]
+#     resource_group = os.environ["AZURE_RESOURCE_GROUP"]
+#     workspace = os.environ["AZURE_ML_WORKSPACE"]
+# except KeyError as e:
+#     logger.error(f"Variable d'environnement manquante : {e}")
+#     exit(1)
 
 credential = DefaultAzureCredential()
 ml_client = MLClient(credential, subscription_id, resource_group, workspace)
