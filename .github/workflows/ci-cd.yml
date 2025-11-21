@@ -196,7 +196,7 @@ jobs:
 
       - name: Register model in Azure ML
         working-directory: backend
-        run: python ml/register_model.py
+        run: python scripts/register_model.py
 
 
   # ----------------- Job 2 : Déploiement Azure -----------------
@@ -223,7 +223,7 @@ jobs:
           pip install azure-ai-ml azure-identity
 
       - name: Deploy model to Azure ML endpoint
-        working-directory: backend/ml
+        working-directory: backend/scripts
         run: python deploy_endpoint.py
 
 
