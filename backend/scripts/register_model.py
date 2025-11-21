@@ -1,4 +1,3 @@
-# backend/ml/register_model.py
 import os
 from azure.identity import DefaultAzureCredential
 from azure.ai.ml import MLClient
