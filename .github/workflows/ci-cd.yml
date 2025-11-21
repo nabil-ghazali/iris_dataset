@@ -187,9 +187,9 @@ jobs:
         working-directory: backend
         run: |
           python -m pip install --upgrade pip
+          pip install setuptools==70.0.0     #  (compatible pkg_resources)
+          pip install azureml-core
           pip install -r requirements.txt
-          pip install azureml-core  # nécessaire pour register_model.py
-
       - name: Run training
         working-directory: backend
         run: python ml/train.py
