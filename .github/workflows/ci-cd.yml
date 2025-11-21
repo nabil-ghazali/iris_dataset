@@ -13,7 +13,11 @@ jobs:
     runs-on: ubuntu-latest
     env:
       MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
-      AZUREML_CONFIG_DIR: ${{ secrets.AZUREML_CONFIG_DIR }}  # chemin vers config.json si utilisé
+      AZUREML_CONFIG_DIR: ${{ secrets.AZUREML_CONFIG_DIR }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+      AZURE_ML_WORKSPACE: ${{ secrets.AZURE_ML_WORKSPACE }}
+
     steps:
       # 1️⃣ Checkout du repo
       - name: Checkout repository
@@ -42,6 +46,11 @@ jobs:
       - name: Run training
         working-directory: backend
         run: python ml/train.py
+
+      # Vérifier quelles variables sont visibles
+      - name: Debug environment
+        working-directory: backend
+        run: env
 
       # 5️⃣ Enregistrer le modèle dans Azure ML
       - name: Register model in Azure ML
