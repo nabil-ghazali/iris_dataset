@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
-      # AZUREML_CONFIG_DIR: ${{ github.workspace }}/config.json
+      AZUREML_CONFIG_DIR: ${{ github.workspace }}/config.json
       AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
       AZURE_ML_WORKSPACE: ${{ secrets.AZURE_ML_WORKSPACE }}
