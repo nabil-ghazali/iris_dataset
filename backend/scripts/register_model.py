@@ -1,6 +1,6 @@
 import os
 import json
-from azure.identity import DefaultAzureCredential
+from azure.identity import ClientSecretCredential
 from azure.ai.ml import MLClient
 from azure.ai.ml.entities import Model
 from pathlib import Path
@@ -26,12 +26,24 @@ try:
     subscription_id = config["subscription_id"]
     resource_group = config["resource_group"]
     workspace = config["workspace_name"]
+
+    # Authentification service principal
+    tenant_id = config["tenant_id"]
+    client_id = config["client_id"]
+    client_secret = config["client_secret"]
+
 except KeyError as e:
     logger.error(f"Clé manquante dans config.json : {e}")
     exit(1)
 
 # ------------------------ Connexion Azure ML SDK v2 ------------------------
-credential = DefaultAzureCredential()
+
+credential = ClientSecretCredential(
+    tenant_id=os.environ["AZURE_TENANT_ID"],
+    client_id=os.environ["AZURE_CLIENT_ID"],
+    client_secret=os.environ["AZURE_CLIENT_SECRET"]
+)
+
 
 ml_client = MLClient(
     credential=credential,
@@ -58,10 +70,10 @@ MODEL_NAME = "iris_model"
 
 try:
     model = Model(
-        path=str(latest_model_file),
         name=MODEL_NAME,
-        description="Modèle Iris Logistic Regression",
-        type="mlflow_model"
+        path=str(latest_model_file),
+        type="custom_model",  # ✔ pour un `.pkl`
+        description="Modèle Iris Logistic Regression"
     )
 
     registered_model = ml_client.models.create_or_update(model)
