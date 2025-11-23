@@ -32,9 +32,7 @@ try:
     subscription_id = config["subscription_id"]
     resource_group = config["resource_group"]
     workspace = config["workspace_name"]
-    tenant_id = config["tenant_id"]
-    client_id = config["client_id"]
-    client_secret = config["client_secret"]
+
 except KeyError as e:
     logger.error(f"Clé manquante dans config.json : {e}")
     exit(1)
@@ -42,9 +40,9 @@ except KeyError as e:
 # ------------------------ Authentification ------------------------
 # Tu peux aussi utiliser DefaultAzureCredential() si variables d'env définies
 credential = ClientSecretCredential(
-    tenant_id=os.environ.get("AZURE_TENANT_ID", tenant_id),
-    client_id=os.environ.get("AZURE_CLIENT_ID", client_id),
-    client_secret=os.environ.get("AZURE_CLIENT_SECRET", client_secret)
+    tenant_id=os.environ.get("AZURE_TENANT_ID"),
+    client_id=os.environ.get("AZURE_CLIENT_ID"),
+    client_secret=os.environ.get("AZURE_CLIENT_SECRET")
 )
 
 ml_client = MLClient(
