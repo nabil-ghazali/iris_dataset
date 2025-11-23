@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
-      AZUREML_CONFIG_DIR: ${{ secrets.AZUREML_CONFIG_DIR }}
+      AZUREML_CONFIG_DIR: ${{ github.workspace }}/config.json
       AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
       AZURE_ML_WORKSPACE: ${{ secrets.AZURE_ML_WORKSPACE }}
@@ -51,6 +51,14 @@ jobs:
       - name: Debug environment
         working-directory: backend
         run: env
+
+      # Test si config.json existe, est lisible, est au bon format 
+      - name: Debug config.json path
+        run: |
+          echo "Using config at: $AZUREML_CONFIG_DIR"
+          ls -l ${{ github.workspace }}
+          cat ${{ github.workspace }}/config.json
+        working-directory: backend
 
       # 5️⃣ Enregistrer le modèle dans Azure ML
       - name: Register model in Azure ML
