@@ -1,20 +1,26 @@
 import os
 import json
-from azure.identity import ClientSecretCredential
+import logging
+from pathlib import Path
+from azure.identity import ClientSecretCredential, DefaultAzureCredential
 from azure.ai.ml import MLClient
 from azure.ai.ml.entities import Model
-from pathlib import Path
-import logging
 
 # ------------------------ Logger ------------------------
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # ------------------------ Charger config.json ------------------------
-config_path = os.environ.get("AZUREML_CONFIG_DIR")
+config_dir = os.environ.get("AZUREML_CONFIG_DIR")
 
-if not config_path or not os.path.exists(config_path):
-    logger.error(f"Fichier config.json non trouvé via AZUREML_CONFIG_DIR = {config_path}")
+if config_dir is None:
+    logger.error("Variable d'environnement AZUREML_CONFIG_DIR non définie.")
+    exit(1)
+
+config_path = Path(config_dir) / "config.json"
+
+if not config_path.exists():
+    logger.error(f"Fichier config.json non trouvé : {config_path}")
     exit(1)
 
 logger.info(f"Chargement de la configuration Azure ML depuis : {config_path}")
@@ -26,24 +32,20 @@ try:
     subscription_id = config["subscription_id"]
     resource_group = config["resource_group"]
     workspace = config["workspace_name"]
-
-    # Authentification service principal
     tenant_id = config["tenant_id"]
     client_id = config["client_id"]
     client_secret = config["client_secret"]
-
 except KeyError as e:
     logger.error(f"Clé manquante dans config.json : {e}")
     exit(1)
 
-# ------------------------ Connexion Azure ML SDK v2 ------------------------
-
+# ------------------------ Authentification ------------------------
+# Tu peux aussi utiliser DefaultAzureCredential() si variables d'env définies
 credential = ClientSecretCredential(
-    tenant_id=os.environ["AZURE_TENANT_ID"],
-    client_id=os.environ["AZURE_CLIENT_ID"],
-    client_secret=os.environ["AZURE_CLIENT_SECRET"]
+    tenant_id=os.environ.get("AZURE_TENANT_ID", tenant_id),
+    client_id=os.environ.get("AZURE_CLIENT_ID", client_id),
+    client_secret=os.environ.get("AZURE_CLIENT_SECRET", client_secret)
 )
-
 
 ml_client = MLClient(
     credential=credential,
@@ -55,7 +57,7 @@ ml_client = MLClient(
 logger.info("Connecté à Azure ML via SDK v2.")
 
 # ------------------------ Trouver le dernier modèle local ------------------------
-MODEL_DIR = Path(__file__).parent / "../model"
+MODEL_DIR = Path(__file__).parent.parent / "model"
 model_files = list(MODEL_DIR.glob("model_*.pkl"))
 
 if not model_files:
@@ -72,7 +74,7 @@ try:
     model = Model(
         name=MODEL_NAME,
         path=str(latest_model_file),
-        type="custom_model",  # ✔ pour un `.pkl`
+        type="custom_model",
         description="Modèle Iris Logistic Regression"
     )
 
@@ -85,7 +87,7 @@ try:
     with open(latest_model_txt, "w") as f:
         f.write(registered_model.name)
 
-    logger.info(f"Modèle enregistré dans {latest_model_txt}")
+    logger.info(f"Nom du modèle enregistré écrit dans {latest_model_txt}")
 
 except Exception as e:
     logger.error("Erreur durant l'enregistrement du modèle")
