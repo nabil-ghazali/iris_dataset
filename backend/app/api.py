@@ -104,7 +104,6 @@ from fastapi.middleware.cors import CORSMiddleware
 import numpy as np
 import joblib
 import os
-from azureml.core import Workspace, Model
 
 # ------------------------------ Logger ---------------------------------------
 logging.basicConfig(level=logging.INFO)
@@ -125,49 +124,57 @@ app = FastAPI(title="Iris predict")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,  # incompatible avec allow_origins=["*"] côté spec CORS
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # -------------------------- Répertoire des modèles --------------------------
-MODEL_DIR = os.path.join(os.path.dirname(__file__), "../../model")
+# Toujours backend/model, quel que soit le dossier d'exécution.
+MODEL_DIR = os.path.join(os.path.dirname(__file__), "..", "model")
 os.makedirs(MODEL_DIR, exist_ok=True)
 MODEL_NAME = "iris_model"
 
-# -------------------------- Fonction pour charger le modèle -------------------
-def load_model():
-    """Charge le modèle Azure ML, sinon fallback local"""
-    try:
-        logger.info("Tentative de connexion au Workspace Azure ML...")
-        ws = Workspace.from_config()
-        logger.info(f"Connecté au workspace : {ws.name}")
+# -------------------------- Chargement du modèle ---------------------------
+# 1) Import Azure paresseux : le SDK n'est requis QUE si IRIS_USE_AZURE=1.
+#    Sinon on va directement au dernier .pkl local -> l'API démarre partout,
+#    et `import app.api` reste léger (tests collectables sans azureml).
+# 2) Chargement paresseux : au 1er /predict, pas à l'import du module.
+_MODEL = None
 
-        model = Model(ws, name=MODEL_NAME)
-        model_path = model.download(target_dir=MODEL_DIR, exist_ok=True)
-        logger.info(f"Modèle Azure ML téléchargé dans : {model_path}")
 
-        loaded_model = joblib.load(model_path)
-        logger.info("Modèle Azure ML chargé avec succès !")
-        return loaded_model
+def _load_from_azure():
+    from azureml.core import Workspace, Model  # import local, optionnel
+    ws = Workspace.from_config()
+    logger.info(f"Connecté au workspace Azure ML : {ws.name}")
+    model_path = Model(ws, name=MODEL_NAME).download(target_dir=MODEL_DIR, exist_ok=True)
+    return joblib.load(model_path)
 
-    except Exception as e:
-        logger.warning(f"Impossible de charger le modèle depuis Azure ML : {e}")
-        logger.info("Tentative de charger le dernier modèle local disponible...")
 
-        # Récupérer le dernier modèle local
-        model_files = [f for f in os.listdir(MODEL_DIR) if f.endswith(".pkl")]
-        if not model_files:
-            raise FileNotFoundError(f"Aucun modèle trouvé dans {MODEL_DIR}")
+def _load_latest_local():
+    pkls = [f for f in os.listdir(MODEL_DIR) if f.endswith(".pkl")]
+    if not pkls:
+        raise FileNotFoundError(
+            f"Aucun modèle .pkl dans {MODEL_DIR}. Lance d'abord `python ml/train.py`."
+        )
+    latest = max(pkls, key=lambda f: os.path.getmtime(os.path.join(MODEL_DIR, f)))
+    logger.info(f"Modèle local chargé : {latest}")
+    return joblib.load(os.path.join(MODEL_DIR, latest))
 
-        latest_model_file = max(model_files, key=lambda f: os.path.getmtime(os.path.join(MODEL_DIR, f)))
-        model_local_path = os.path.join(MODEL_DIR, latest_model_file)
-        loaded_model = joblib.load(model_local_path)
-        logger.info(f"Modèle local chargé : {latest_model_file}")
-        return loaded_model
 
-# Charger le modèle au démarrage
-model = load_model()
+def get_model():
+    """Retourne le modèle en cache, en le chargeant au premier appel."""
+    global _MODEL
+    if _MODEL is None:
+        if os.getenv("IRIS_USE_AZURE") == "1":
+            try:
+                _MODEL = _load_from_azure()
+            except Exception as e:  # noqa: BLE001
+                logger.warning(f"Azure ML indisponible ({e}) -> fallback local.")
+                _MODEL = _load_latest_local()
+        else:
+            _MODEL = _load_latest_local()
+    return _MODEL
 
 # -------------------------- Routes API --------------------------------------
 @app.get("/")
@@ -181,7 +188,7 @@ def predict(data: IrisData):
     X = np.array([[data.sepal_length, data.sepal_width, data.petal_length, data.petal_width]])
 
     try:
-        pred = model.predict(X)[0]
+        pred = get_model().predict(X)[0]
         variety = IRIS_CLASS.get(int(pred), "Unknown")
         logger.info(f"Prediction : {pred} ({variety})")
         return {"prediction": int(pred), "variety": variety}
