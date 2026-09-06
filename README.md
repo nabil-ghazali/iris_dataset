@@ -12,7 +12,7 @@
   <img src="https://img.shields.io/badge/tracking-MLflow-0194E2" alt="MLflow">
   <img src="https://img.shields.io/badge/API-FastAPI-009688" alt="FastAPI">
   <img src="https://img.shields.io/badge/docs-MkDocs-526CFE" alt="MkDocs">
-  <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT"> <!-- [PAS ENCORE LIVRE] : après ajout du fichier LICENSE -->
+  <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT">
 </p>
 
 > Note : "Iris + régression logistique" est un choix assumé. Le but est de montrer
