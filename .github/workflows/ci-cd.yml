@@ -54,14 +54,6 @@ jobs:
         working-directory: backend
         run: env
 
-      # Test si config.json existe, est lisible, est au bon format 
-      - name: Debug config.json path
-        run: |
-          echo "Using config at: $AZUREML_CONFIG_DIR"
-          ls -l ${{ github.workspace }}
-          cat ${{ github.workspace }}/config.json
-        working-directory: backend
-
       # 5️⃣ Enregistrer le modèle dans Azure ML
       - name: Register model in Azure ML
         working-directory: backend
