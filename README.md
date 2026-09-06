@@ -8,6 +8,7 @@
 </p>
 
 <p align="center">
+  <img src="https://github.com/nabil-ghazali/iris_dataset/actions/workflows/ci-cd.yml/badge.svg" alt="CI">
   <img src="https://img.shields.io/badge/python-3.11-blue" alt="Python 3.11">
   <img src="https://img.shields.io/badge/tracking-MLflow-0194E2" alt="MLflow">
   <img src="https://img.shields.io/badge/API-FastAPI-009688" alt="FastAPI">
