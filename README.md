@@ -168,4 +168,4 @@ documentation (MkDocs), intégration continue GitHub Actions.
 
 ## Licence
 
-MIT (fichier `LICENSE` à ajouter). [PAS ENCORE LIVRE]
+Distribué sous licence MIT. Voir le fichier [LICENSE](LICENSE).
