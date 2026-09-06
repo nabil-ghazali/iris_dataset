@@ -209,3 +209,5 @@ __marimo__/
 #Mlflow
 mlruns/
 mlflow.db
+# Config Azure ML locale (identifiants d infra)
+config.json

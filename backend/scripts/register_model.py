@@ -11,32 +11,34 @@ from azure.ai.ml.entities import Model
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# ------------------------ Charger config.json ------------------------
-config_dir = os.environ.get("AZUREML_CONFIG_DIR")
+# ------------------------ Configuration Azure ML ------------------------
+# Priorité aux variables d'environnement (utilisées en CI et recommandées).
+# Repli sur $AZUREML_CONFIG_DIR/config.json en local (fichier non versionné,
+# voir config.json.example).
+subscription_id = os.environ.get("AZURE_SUBSCRIPTION_ID")
+resource_group = os.environ.get("AZURE_RESOURCE_GROUP")
+workspace = os.environ.get("AZURE_ML_WORKSPACE")
 
-if config_dir is None:
-    logger.error("Variable d'environnement AZUREML_CONFIG_DIR non définie.")
-    exit(1)
-
-config_path = Path(config_dir) / "config.json"
-
-if not config_path.exists():
-    logger.error(f"Fichier config.json non trouvé : {config_path}")
-    exit(1)
-
-logger.info(f"Chargement de la configuration Azure ML depuis : {config_path}")
-
-with open(config_path, "r") as f:
-    config = json.load(f)
-
-try:
-    subscription_id = config["subscription_id"]
-    resource_group = config["resource_group"]
-    workspace = config["workspace_name"]
-
-except KeyError as e:
-    logger.error(f"Clé manquante dans config.json : {e}")
-    exit(1)
+if not all([subscription_id, resource_group, workspace]):
+    config_dir = os.environ.get("AZUREML_CONFIG_DIR", ".")
+    config_path = Path(config_dir) / "config.json"
+    if not config_path.exists():
+        logger.error(
+            "Configuration Azure ML absente. Renseigne AZURE_SUBSCRIPTION_ID, "
+            "AZURE_RESOURCE_GROUP et AZURE_ML_WORKSPACE, ou copie "
+            "config.json.example vers config.json."
+        )
+        exit(1)
+    logger.info(f"Chargement de la configuration Azure ML depuis : {config_path}")
+    with open(config_path, "r") as f:
+        config = json.load(f)
+    try:
+        subscription_id = config["subscription_id"]
+        resource_group = config["resource_group"]
+        workspace = config["workspace_name"]
+    except KeyError as e:
+        logger.error(f"Clé manquante dans config.json : {e}")
+        exit(1)
 
 # ------------------------ Authentification ------------------------
 # Tu peux aussi utiliser DefaultAzureCredential() si variables d'env définies

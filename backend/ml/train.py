@@ -242,14 +242,21 @@
 #         logger.error(e)
 
 import os
-import mlflow
-import shutil
+import json
 import logging
+
+# MLflow >= 3 refuse le backend "file store" sauf opt-out explicite. Pour ce projet
+# de démonstration on reste sur un stockage fichier local ; en prod on passerait à
+# une URI sqlite:/// ou un serveur MLflow (via MLFLOW_TRACKING_URI).
+os.environ.setdefault("MLFLOW_ALLOW_FILE_STORE", "true")
+
+import joblib
+import mlflow
+import mlflow.sklearn
 from sklearn import datasets
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, f1_score
-import mlflow.sklearn
 
 # ------------------------ Logger ------------------------------
 logging.basicConfig(
@@ -260,14 +267,17 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # -------------------- Configuration MLflow --------------------
-mlflow_uri = os.getenv("MLFLOW_TRACKING_URI", "file://./mlruns")
+# Défaut local qui fonctionne quel que soit le dossier courant (un seul "/" après "file:").
+DEFAULT_MLRUNS = os.path.join(os.path.dirname(__file__), "..", "mlruns")
+mlflow_uri = os.getenv("MLFLOW_TRACKING_URI", f"file:{DEFAULT_MLRUNS}")
 mlflow.set_tracking_uri(mlflow_uri)
 logger.info(f"MLflow tracking URI : {mlflow.get_tracking_uri()}")
 
 mlflow.set_experiment("Mlflow Iris")
 
 # -------------------- Répertoire pour sauvegarder les modèles --------------------
-MODEL_DIR = "../model"
+# Toujours backend/model, indépendamment du dossier d'exécution.
+MODEL_DIR = os.path.join(os.path.dirname(__file__), "..", "model")
 os.makedirs(MODEL_DIR, exist_ok=True)
 
 # -------------------- Chargement du dataset --------------------
@@ -281,10 +291,11 @@ X_train, X_test, y_train, y_test = train_test_split(
 )
 
 # -------------------- Hyperparamètres --------------------
+# (le multiclasse est géré nativement par lbfgs depuis scikit-learn 1.5,
+#  l'ancien argument multi_class="multinomial" a été retiré.)
 params = {
     "solver": "lbfgs",
     "max_iter": 1000,
-    "multi_class": "multinomial",
     "random_state": 8888,
 }
 
@@ -302,9 +313,22 @@ with mlflow.start_run() as run:
     f1 = f1_score(y_test, y_pred, average="macro")
     logger.info(f"Metrics: Accuracy={acc:.4f}, F1-score={f1:.4f}")
 
-    # Sauvegarde locale du modèle
+    # Sauvegarde locale : un vrai fichier .pkl chargeable par joblib.load
+    # (c'est ce qu'attendent app/api.py et les tests). mlflow.sklearn.save_model
+    # créait un DOSSIER, d'où l'incohérence précédente.
     destination = os.path.join(MODEL_DIR, f"model_{run.info.run_id}.pkl")
-    mlflow.sklearn.save_model(lr, destination)
+    joblib.dump(lr, destination)
     logger.info(f"Modèle sauvegardé localement dans {destination}")
+
+    # Métriques réelles versionnées à côté du modèle (aucun chiffre inventé ailleurs).
+    metrics = {
+        "accuracy": round(float(acc), 4),
+        "f1_macro": round(float(f1), 4),
+        "run_id": run.info.run_id,
+        "n_test": int(len(y_test)),
+    }
+    with open(os.path.join(MODEL_DIR, "metrics.json"), "w") as fp:
+        json.dump(metrics, fp, indent=2)
+    logger.info(f"Métriques écrites dans {os.path.join(MODEL_DIR, 'metrics.json')}")
 
 # L'enregistrement dans Azure ML sera géré par register_model.py avec SDK v2
