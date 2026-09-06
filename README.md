@@ -141,10 +141,8 @@ dernier entraînement sont dans `backend/model/metrics.json`, régénéré par
 
 - Dataset volontairement trivial : ce dépôt ne démontre pas de modélisation
   difficile, seulement l'outillage autour.
-- Le pipeline CI complet suppose des identifiants Azure ; un job de tests
-  indépendant d'Azure est en cours d'ajout. [PAS ENCORE LIVRE]
-- Plusieurs modèles `.pkl` sont versionnés ; une déduplication est prévue.
-  [PAS ENCORE LIVRE]
+- Le pipeline CI complet suppose des identifiants Azure (secrets GitHub) ; sans eux,
+  seuls les tests locaux (`pytest`) sont exécutables.
 
 ## Améliorations futures
 
